@@ -1643,19 +1643,19 @@ def check_module_availability(
     """
     if isinstance(module_to_description, list):
         module_to_description = {module: "" for module in module_to_description}
-    availability = {
-        module: check_module(module) is not None for module in module_to_description
-    }
-    for module, module_decription in module_to_description.items():
-        caller_frame = inspect.stack()[1]
-        caller_module = caller_frame.frame.f_globals["__name__"]
-        caller_function = caller_frame.function
+    availability = {module: check_module(module) for module in module_to_description}
 
-        logging.getLogger("PPanGGOLiN").warning(
-            f"Missing required python module: '{module}' {module_decription}."
-            f"This check was triggered in '{caller_function} inside module '{caller_module}'. "
-            "Please install the missing module to enable the (optional) feature requiring it."
-        )
+    for module, module_decription in module_to_description.items():
+        if not availability[module]:
+            caller_frame = inspect.stack()[1]
+            caller_module = caller_frame.frame.f_globals["__name__"]
+            caller_function = caller_frame.function
+
+            logging.getLogger("PPanGGOLiN").warning(
+                f"Missing required python module: '{module}' {module_decription}. "
+                f"This check was triggered in '{caller_function}' inside module '{caller_module}'. "
+                "Please install the missing module to enable the (optional) feature requiring it."
+            )
     return availability
 
 
@@ -1678,8 +1678,9 @@ def check_translation_table_to_use(
     :param user_translation_table: The translation table value provided by the user
                                    (default or explicitly specified)
 
-    :return: The translation table to use for translation
+    :return: The translation table to use for translation, normalized to an int
     """
+
     logger = logging.getLogger("PPanGGOLiN")
 
     pangenome_translation_table = pangenome.status.get("translation_table", None)
@@ -1750,18 +1751,19 @@ def check_translation_table_to_use(
             logger.debug(
                 f"Using user-specified translation table: {user_translation_table}"
             )
-        return user_translation_table
+        return int(user_translation_table)
 
     # Case 2: No user specification, use genetic code from previous steps if available
     if pangenome_translation_table is not None:
         logger.debug(
             f"Using translation table from previous pangenome analysis: {pangenome_translation_table}"
         )
-        return pangenome_translation_table
+
+        return int(pangenome_translation_table)
 
     # Case 3: No user specification and no previous data, use default
     logger.info(
         f"No translation table information found in previous pangenome analysis. "
         f"Using the default translation table: {user_translation_table}."
     )
-    return user_translation_table
+    return int(user_translation_table)
