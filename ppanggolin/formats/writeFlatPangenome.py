@@ -483,7 +483,7 @@ def pangenome_to_gt(pangenome: Pangenome):
     for fam in pangenome.gene_families:
         v = g.add_vertex()
         vmap[fam.ID] = v
-        g.vp["nid"][v] = fam.ID
+        g.vp["nid"][v] = fam.name
         g.vp["partition"][v] = named_partition_to_code[fam.named_partition]
         g.vp["strains"][v] = {g.organism for g in fam.genes}
 
